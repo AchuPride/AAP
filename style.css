@@ -1,0 +1,109 @@
+:root{
+    --red: #d64444;
+    --white: #ffffff;
+    --cream: #ffffffad;
+    --blue: #005284;
+    --backgroundcolor: #b3c5da;
+    --yellow: #ffb270;
+}
+*{
+    padding:0;
+}
+body{
+   justify-content: space-between;
+}
+.row{
+    display: flex;
+    justify-content: space-between;
+    
+}
+.icon{
+    height: 20px;
+    width: 20px;
+    background-color: var(--red);
+    border-radius: 50%;
+    display: inline-block;
+    margin: 5px;
+    mask-position: 5%;
+}
+.icon:hover {
+    transform: scale(1.1);
+    transition: 0.5s;
+    cursor: pointer;
+    background-color: var(--blue);
+}
+input[type=text] {
+    width: 30%;
+    box-sizing: border-box;
+    border-radius: 6px;
+    font-size: 12px;
+    background-color: var(--cream);
+    background-image: url('img/Search.png');
+    background-position: 5px 5px;
+    background-repeat: no-repeat;
+    padding: 12px 20px 12px 40px;
+}
+.email-area{
+    text-align: center;
+    justify-content: space-between;
+}
+.refund-area{
+    text-align: center;
+    background-color: var(--backgroundcolor);
+    justify-content: space-between;
+}
+.logo{
+    font-size: 24px;
+    font-weight: bold;
+    padding: 30px;
+    color: var(--white);
+    text-align: center;
+    background-color: var();
+}
+.button{
+    width: 10%;
+    box-sizing: border-box;
+    border-radius: 5px;
+    border: 2px solid var(--red);
+    background-color: var(--red);
+    padding: 12px 20px 12px 40px;
+    color: var(--white);
+}
+.but{
+    width: 10%;
+    box-sizing: border-box;
+    border-radius: 5px;
+    border: 2px solid var(--red);
+    background-color: var(--red);
+    padding: 12px 20px 12px 30px;
+    color: var(--white);
+}
+#p{
+    color: var(--blue);
+    background-color: var(--blue);
+}
+.img{
+    height: 70px;
+    width: 70px;
+    background-color: var(--blue);
+    box-sizing: border-box;
+    border-radius: 6px;
+    border: var(--yellow);
+    border-radius: 50%;
+    display: inline-block;
+    margin: 5px;
+    mask-position: 5%;
+    align-items: center;
+    background-repeat: no-repeat;
+    padding: 9px 20px 12px 10px;
+}
+.row1{
+    display: flex;
+    justify-content:space-between ;
+}
+.row1:hover{
+    transform: scale(1.1);
+    transition: 0.5s;
+    cursor: pointer;
+    /* background-color: var(--red); */
+}
