@@ -9,6 +9,11 @@ import Login         from './pages/Login';
 import Dashboard     from './pages/Dashboard';
 import CaseDetail    from './pages/CaseDetail';
 import AdminDashboard from './pages/AdminDashboard';
+import SafetyTips    from './pages/SafetyTips';
+import Resources     from './pages/Resources';
+import News          from './pages/News';
+import Donate        from './pages/Donate';
+import SuccessStories from './pages/SuccessStories';
 import NotFound      from './pages/NotFound';
 
 export default function App() {
@@ -32,6 +37,11 @@ export default function App() {
         <Route path="/report"  element={<ReportIncident />} />
         <Route path="/track"   element={<TrackCase />} />
         <Route path="/login"   element={<Login />} />
+        <Route path="/safety-tips" element={<SafetyTips />} />
+        <Route path="/resources"   element={<Resources />} />
+        <Route path="/news"        element={<News />} />
+        <Route path="/donate"      element={<Donate />} />
+        <Route path="/stories"     element={<SuccessStories />} />
 
         {/* Protected: officer + admin */}
         <Route element={<PrivateRoute roles={['officer', 'admin']} />}>

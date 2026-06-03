@@ -15,6 +15,9 @@ const reportRoutes = require('./routes/report');
 const caseRoutes   = require('./routes/cases');
 const authRoutes   = require('./routes/auth');
 const adminRoutes  = require('./routes/admin');
+const partnerRoutes = require('./routes/partners');
+const newsRoutes    = require('./routes/news');
+const testimonialRoutes = require('./routes/testimonials');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -68,17 +71,34 @@ app.use('/api/report', reportRoutes);
 app.use('/api/cases',  caseRoutes);
 app.use('/api/auth',   authRoutes);
 app.use('/api/admin',  adminRoutes);
+app.use('/api/partners', partnerRoutes);
+app.use('/api/news', newsRoutes);
+app.use('/api/testimonials', testimonialRoutes);
 
 // ── Static file serving for uploaded evidence (private — could add token auth) ──
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// ── 404 & error handlers ───────────────────────────────────────
-app.use(notFound);
+// ── Serve React Frontend in Production ──
+if (process.env.NODE_ENV === 'production') {
+  const clientBuildPath = path.join(__dirname, '../client/dist');
+  app.use(express.static(clientBuildPath));
+  
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    res.sendFile(path.join(clientBuildPath, 'index.html'));
+  });
+} else {
+  app.use(notFound);
+}
 app.use(errorHandler);
 
 // ── Start ──────────────────────────────────────────────────────
-app.listen(PORT, () => {
-  logger.info(`GBV Platform server running on port ${PORT} [${process.env.NODE_ENV}]`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    logger.info(`GBV Platform server running on port ${PORT} [${process.env.NODE_ENV}]`);
+  });
+}
 
 module.exports = app;

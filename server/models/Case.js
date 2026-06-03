@@ -4,6 +4,7 @@ const findByToken = async (token) => {
   const result = await query(
     `SELECT c.id, c.case_token, c.violence_type, c.status,
             c.location, c.incident_date, c.is_priority, c.created_at, c.updated_at,
+            c.incident_category, c.platform_involved, c.anonymous_toggle,
             u.full_name AS officer_name
      FROM cases c
      LEFT JOIN users u ON c.assigned_officer_id = u.id
@@ -47,12 +48,12 @@ const getAllUpdates = async (caseId) => {
   return result.rows;
 };
 
-const createCase = async ({ case_token, violence_type, description, location, incident_date }) => {
+const createCase = async ({ case_token, violence_type, description, location, incident_date, incident_category, platform_involved, anonymous_toggle }) => {
   const result = await query(
-    `INSERT INTO cases (case_token, violence_type, description, location, incident_date)
-     VALUES ($1,$2,$3,$4,$5)
+    `INSERT INTO cases (case_token, violence_type, description, location, incident_date, incident_category, platform_involved, anonymous_toggle)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
      RETURNING id, case_token, status, created_at`,
-    [case_token, violence_type, description, location || null, incident_date]
+    [case_token, violence_type, description, location || null, incident_date, incident_category || null, platform_involved || null, anonymous_toggle !== undefined ? anonymous_toggle : true]
   );
   return result.rows[0];
 };

@@ -10,10 +10,19 @@ const logger = require('../config/logger');
  */
 const submitReport = async (req, res, next) => {
   try {
-    const { violence_type, description, location, incident_date } = req.body;
+    const { violence_type, description, location, incident_date, incident_category, platform_involved, anonymous_toggle } = req.body;
     const token = generateCaseToken();
 
-    const newCase = await Case.createCase({ case_token: token, violence_type, description, location, incident_date });
+    const newCase = await Case.createCase({
+      case_token: token,
+      violence_type,
+      description,
+      location,
+      incident_date,
+      incident_category,
+      platform_involved,
+      anonymous_toggle
+    });
 
     // Add initial timeline entry
     await Case.addUpdate({
@@ -63,4 +72,19 @@ const submitReport = async (req, res, next) => {
   }
 };
 
-module.exports = { submitReport };
+const getPublicStats = async (req, res, next) => {
+  try {
+    const stats = await Case.getStats();
+    res.json({
+      total: stats.total || 0,
+      resolved: stats.resolved || 0,
+      under_review: stats.under_review || 0,
+      investigating: stats.investigating || 0,
+      submitted: stats.submitted || 0,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { submitReport, getPublicStats };

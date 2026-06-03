@@ -9,7 +9,7 @@ import {
 } from 'chart.js';
 import {
   HiUserAdd, HiUsers, HiFolder, HiCheckCircle,
-  HiRefresh, HiBan, HiCheck,
+  HiRefresh, HiBan, HiCheck, HiPlus, HiTrash, HiShieldCheck, HiPencil
 } from 'react-icons/hi';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend);
@@ -20,10 +20,30 @@ export default function AdminDashboard() {
   const [stats,        setStats]        = useState(null);
   const [users,        setUsers]        = useState([]);
   const [loading,      setLoading]      = useState(true);
-  const [tab,          setTab]          = useState('overview'); // overview | users | audit
+  const [tab,          setTab]          = useState('overview'); // overview | users | partners | news | testimonials | audit
+  
+  // Create user
   const [newUser,      setNewUser]      = useState({ username: '', password: '', full_name: '', role: 'officer' });
   const [creating,     setCreating]     = useState(false);
   const [showForm,     setShowForm]     = useState(false);
+
+  // Partners states
+  const [partners,     setPartners]     = useState([]);
+  const [loadingPartners, setLoadingPartners] = useState(false);
+  const [showPartnerForm, setShowPartnerForm] = useState(false);
+  const [newPartner,   setNewPartner]   = useState({ name: '', category: 'civil_society', description: '', contact_phone: '', website_url: '' });
+  const [creatingPartner, setCreatingPartner] = useState(false);
+
+  // News states
+  const [newsList,     setNewsList]     = useState([]);
+  const [loadingNews,  setLoadingNews]  = useState(false);
+  const [showNewsForm, setShowNewsForm] = useState(false);
+  const [newNews,      setNewNews]      = useState({ title: '', content: '', category: 'news' });
+  const [creatingNews, setCreatingNews] = useState(false);
+
+  // Testimonials states
+  const [testimonials, setTestimonials] = useState([]);
+  const [loadingTestimonials, setLoadingTestimonials] = useState(false);
 
   // Audit Logs state
   const [auditLogs,    setAuditLogs]    = useState([]);
@@ -61,15 +81,52 @@ export default function AdminDashboard() {
     }
   }, []);
 
+  const loadPartners = useCallback(async () => {
+    setLoadingPartners(true);
+    try {
+      const { data } = await api.get('/partners');
+      setPartners(data);
+    } catch {
+      toast.error('Failed to load partners.');
+    } finally {
+      setLoadingPartners(false);
+    }
+  }, []);
+
+  const loadNews = useCallback(async () => {
+    setLoadingNews(true);
+    try {
+      const { data } = await api.get('/news?limit=100');
+      setNewsList(data.articles || []);
+    } catch {
+      toast.error('Failed to load news.');
+    } finally {
+      setLoadingNews(false);
+    }
+  }, []);
+
+  const loadTestimonials = useCallback(async () => {
+    setLoadingTestimonials(true);
+    try {
+      const { data } = await api.get('/testimonials/all');
+      setTestimonials(data);
+    } catch {
+      toast.error('Failed to load testimonials.');
+    } finally {
+      setLoadingTestimonials(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadAll();
   }, [loadAll]);
 
   useEffect(() => {
-    if (tab === 'audit') {
-      loadAuditLogs(1);
-    }
-  }, [tab, loadAuditLogs]);
+    if (tab === 'audit') loadAuditLogs(1);
+    if (tab === 'partners') loadPartners();
+    if (tab === 'news') loadNews();
+    if (tab === 'testimonials') loadTestimonials();
+  }, [tab, loadAuditLogs, loadPartners, loadNews, loadTestimonials]);
 
   const createUser = async (e) => {
     e.preventDefault();
@@ -94,6 +151,84 @@ export default function AdminDashboard() {
       setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, is_active: data.is_active } : u)));
     } catch (err) {
       toast.error(err.response?.data?.message || 'Toggle failed.');
+    }
+  };
+
+  // Partners handlers
+  const createPartnerHandler = async (e) => {
+    e.preventDefault();
+    setCreatingPartner(true);
+    try {
+      await api.post('/partners', newPartner);
+      toast.success('Partner created successfully.');
+      setNewPartner({ name: '', category: 'civil_society', description: '', contact_phone: '', website_url: '' });
+      setShowPartnerForm(false);
+      loadPartners();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to create partner.');
+    } finally {
+      setCreatingPartner(false);
+    }
+  };
+
+  const deletePartnerHandler = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this partner?')) return;
+    try {
+      await api.delete(`/partners/${id}`);
+      toast.success('Partner deleted.');
+      loadPartners();
+    } catch {
+      toast.error('Failed to delete partner.');
+    }
+  };
+
+  // News handlers
+  const createNewsHandler = async (e) => {
+    e.preventDefault();
+    setCreatingNews(true);
+    try {
+      await api.post('/news', newNews);
+      toast.success('News article published.');
+      setNewNews({ title: '', content: '', category: 'news' });
+      setShowNewsForm(false);
+      loadNews();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to publish news.');
+    } finally {
+      setCreatingNews(false);
+    }
+  };
+
+  const deleteNewsHandler = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this article?')) return;
+    try {
+      await api.delete(`/news/${id}`);
+      toast.success('Article deleted.');
+      loadNews();
+    } catch {
+      toast.error('Failed to delete article.');
+    }
+  };
+
+  // Testimonials handlers
+  const approveTestimonialHandler = async (id) => {
+    try {
+      await api.patch(`/testimonials/${id}/approve`);
+      toast.success('Testimonial approved.');
+      loadTestimonials();
+    } catch {
+      toast.error('Failed to approve testimonial.');
+    }
+  };
+
+  const deleteTestimonialHandler = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this testimonial?')) return;
+    try {
+      await api.delete(`/testimonials/${id}`);
+      toast.success('Testimonial deleted.');
+      loadTestimonials();
+    } catch {
+      toast.error('Failed to delete testimonial.');
     }
   };
 
@@ -124,13 +259,12 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="space-y-6">
-
+    <div className="space-y-6 pb-12">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Admin Dashboard</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">System overview, audit logs and user management</p>
+          <h1 className="text-2xl font-bold text-gray-905 dark:text-white">Admin Dashboard</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Control panel for cases, staff, partners, campaigns, and testimonials</p>
         </div>
         <button onClick={loadAll} className="btn-outline text-xs py-2">
           <HiRefresh className="w-4 h-4" /> Refresh
@@ -138,16 +272,19 @@ export default function AdminDashboard() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 dark:bg-gray-900 p-1 rounded-xl w-fit transition-colors">
+      <div className="flex flex-wrap gap-1 bg-gray-100 dark:bg-gray-900 p-1 rounded-xl w-fit transition-colors">
         {[
           { key: 'overview', label: 'Overview' },
           { key: 'users', label: 'User Management' },
+          { key: 'partners', label: 'Partners' },
+          { key: 'news', label: 'News Publisher' },
+          { key: 'testimonials', label: 'Testimonials' },
           { key: 'audit', label: 'Audit Logs' }
         ].map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all
               ${tab === t.key 
                 ? 'bg-white dark:bg-gray-800 text-primary dark:text-indigo-400 shadow-sm' 
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
@@ -160,7 +297,6 @@ export default function AdminDashboard() {
       {/* ── Overview tab ── */}
       {tab === 'overview' && (
         <div className="space-y-6">
-          {/* Stat cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {statCards.map((c) => (
               <div key={c.label} className={`card ${c.bg} flex items-center gap-3 dark:border-transparent`}>
@@ -175,7 +311,6 @@ export default function AdminDashboard() {
             ))}
           </div>
 
-          {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="card dark:bg-gray-950 dark:border-gray-900">
               <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-4">Cases by Status</h3>
@@ -190,37 +325,6 @@ export default function AdminDashboard() {
               )}
             </div>
           </div>
-
-          {/* Officers table */}
-          {stats?.officers?.length > 0 && (
-            <div className="card dark:bg-gray-950 dark:border-gray-900">
-              <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
-                <HiUsers className="w-5 h-5 text-gray-500" /> Officer Workload
-              </h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="border-b border-gray-100 dark:border-gray-900">
-                    <tr>
-                      {['Officer', 'Username', 'Active Cases'].map((h) => (
-                        <th key={h} className="px-3 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50 dark:divide-gray-900">
-                    {stats.officers.map((o) => (
-                      <tr key={o.id}>
-                        <td className="px-3 py-2 font-medium text-gray-900 dark:text-white">{o.full_name}</td>
-                        <td className="px-3 py-2 text-gray-500 dark:text-gray-400 font-mono text-xs">{o.username}</td>
-                        <td className="px-3 py-2">
-                          <span className="badge bg-primary/10 text-primary dark:bg-indigo-950/40 dark:text-indigo-400">{o.assigned_cases}</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
         </div>
       )}
 
@@ -234,7 +338,6 @@ export default function AdminDashboard() {
             </button>
           </div>
 
-          {/* Create user form */}
           {showForm && (
             <form onSubmit={createUser} className="card space-y-4 dark:bg-gray-950 dark:border-gray-900">
               <h3 className="font-semibold text-gray-800 dark:text-gray-200">Create Staff Account</h3>
@@ -268,7 +371,6 @@ export default function AdminDashboard() {
             </form>
           )}
 
-          {/* Users table */}
           <div className="card !p-0 overflow-hidden dark:bg-gray-950 dark:border-gray-900">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-900">
@@ -296,7 +398,7 @@ export default function AdminDashboard() {
                     <td className="px-4 py-3 text-xs text-gray-450 dark:text-gray-500">
                       {u.last_login ? new Date(u.last_login).toLocaleDateString() : 'Never'}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 text-right">
                       <button
                         onClick={() => toggleUser(u.id)}
                         className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-lg transition-colors
@@ -309,6 +411,256 @@ export default function AdminDashboard() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── Partners tab ── */}
+      {tab === 'partners' && (
+        <div className="space-y-5">
+          <div className="flex justify-between items-center">
+            <h2 className="font-semibold text-gray-800 dark:text-gray-200">NGOs & Agencies Network</h2>
+            <button onClick={() => setShowPartnerForm(!showPartnerForm)} className="btn-primary text-xs py-2">
+              <HiPlus className="w-4 h-4" /> Add Partner
+            </button>
+          </div>
+
+          {showPartnerForm && (
+            <form onSubmit={createPartnerHandler} className="card space-y-4 dark:bg-gray-950 dark:border-gray-900">
+              <h3 className="font-bold text-sm text-gray-850 dark:text-gray-200">Register Support Network Partner</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="label">Partner Name</label>
+                  <input className="input" value={newPartner.name} onChange={(e) => setNewPartner({ ...newPartner, name: e.target.value })} required placeholder="e.g. MINPROFF Cameroon" />
+                </div>
+                <div>
+                  <label className="label">Category</label>
+                  <select className="input" value={newPartner.category} onChange={(e) => setNewPartner({ ...newPartner, category: e.target.value })}>
+                    <option value="government_agency">Government Agency</option>
+                    <option value="civil_society">Civil Society / NGO</option>
+                    <option value="medical">Medical Center</option>
+                    <option value="legal">Legal Aid</option>
+                    <option value="psychosocial">Psychosocial Support</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Contact Phone</label>
+                  <input className="input" value={newPartner.contact_phone} onChange={(e) => setNewPartner({ ...newPartner, contact_phone: e.target.value })} placeholder="+237 600 000 000" />
+                </div>
+                <div>
+                  <label className="label">Website URL</label>
+                  <input className="input" value={newPartner.website_url} onChange={(e) => setNewPartner({ ...newPartner, website_url: e.target.value })} placeholder="https://example.org" />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="label">Description</label>
+                  <textarea className="input resize-none" rows={3} value={newPartner.description} onChange={(e) => setNewPartner({ ...newPartner, description: e.target.value })} placeholder="Describe support capabilities..." />
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <button type="submit" disabled={creatingPartner} className="btn-primary">
+                  {creatingPartner ? 'Registering...' : 'Add Partner'}
+                </button>
+                <button type="button" onClick={() => setShowPartnerForm(false)} className="btn-outline">Cancel</button>
+              </div>
+            </form>
+          )}
+
+          <div className="card !p-0 overflow-hidden dark:bg-gray-950 dark:border-gray-900">
+            {loadingPartners ? (
+              <div className="p-8 text-center text-gray-500">Loading partners...</div>
+            ) : partners.length > 0 ? (
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-900">
+                  <tr>
+                    {['Name', 'Category', 'Contact', 'Website', ''].map((h) => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50 dark:divide-gray-900">
+                  {partners.map((p) => (
+                    <tr key={p.id}>
+                      <td className="px-4 py-3">
+                        <span className="font-bold text-gray-850 dark:text-white">{p.name}</span>
+                        <span className="block text-[10px] text-gray-400 max-w-xs truncate">{p.description}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="badge bg-indigo-50 dark:bg-indigo-950/45 text-primary dark:text-indigo-400 uppercase tracking-wider text-[9px] font-bold">
+                          {p.category.replace('_', ' ')}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-xs font-semibold text-gray-600 dark:text-gray-300">{p.contact_phone || '-'}</td>
+                      <td className="px-4 py-3 text-xs text-primary dark:text-indigo-400 truncate max-w-xs">{p.website_url || '-'}</td>
+                      <td className="px-4 py-3 text-right">
+                        <button
+                          onClick={() => deletePartnerHandler(p.id)}
+                          className="p-1 text-red-650 hover:bg-red-50 dark:hover:bg-red-950/30 rounded"
+                          title="Delete partner"
+                        >
+                          <HiTrash className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="p-8 text-center text-gray-500">No support partners registered yet.</div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── News Publisher tab ── */}
+      {tab === 'news' && (
+        <div className="space-y-5">
+          <div className="flex justify-between items-center">
+            <h2 className="font-semibold text-gray-800 dark:text-gray-200">Campaigns & Security Alerts</h2>
+            <button onClick={() => setShowNewsForm(!showNewsForm)} className="btn-primary text-xs py-2">
+              <HiPlus className="w-4 h-4" /> New Article
+            </button>
+          </div>
+
+          {showNewsForm && (
+            <form onSubmit={createNewsHandler} className="card space-y-4 dark:bg-gray-950 dark:border-gray-900">
+              <h3 className="font-bold text-sm text-gray-850 dark:text-gray-200">Publish News or Security Alert</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="sm:col-span-2">
+                  <label className="label">Title</label>
+                  <input className="input" value={newNews.title} onChange={(e) => setNewNews({ ...newNews, title: e.target.value })} required placeholder="e.g. SafeReport Cameroon Launch" />
+                </div>
+                <div>
+                  <label className="label">Category</label>
+                  <select className="input" value={newNews.category} onChange={(e) => setNewNews({ ...newNews, category: e.target.value })}>
+                    <option value="news">News Update</option>
+                    <option value="campaign">Awareness Campaign</option>
+                    <option value="update">Platform update</option>
+                    <option value="alert">Security Alert</option>
+                  </select>
+                </div>
+                <div className="sm:col-span-3">
+                  <label className="label">Content Body</label>
+                  <textarea className="input resize-none" rows={6} value={newNews.content} onChange={(e) => setNewNews({ ...newNews, content: e.target.value })} required placeholder="Write article content..." />
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <button type="submit" disabled={creatingNews} className="btn-primary">
+                  {creatingNews ? 'Publishing...' : 'Publish Article'}
+                </button>
+                <button type="button" onClick={() => setShowNewsForm(false)} className="btn-outline">Cancel</button>
+              </div>
+            </form>
+          )}
+
+          <div className="card !p-0 overflow-hidden dark:bg-gray-950 dark:border-gray-900">
+            {loadingNews ? (
+              <div className="p-8 text-center text-gray-500">Loading articles...</div>
+            ) : newsList.length > 0 ? (
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-900">
+                  <tr>
+                    {['Article', 'Category', 'Published At', 'Author', ''].map((h) => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50 dark:divide-gray-900">
+                  {newsList.map((n) => (
+                    <tr key={n.id}>
+                      <td className="px-4 py-3">
+                        <span className="font-bold text-gray-850 dark:text-white block max-w-sm truncate">{n.title}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="badge bg-indigo-50 dark:bg-indigo-950/45 text-primary dark:text-indigo-400 uppercase tracking-wider text-[9px] font-bold">
+                          {n.category}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-450">
+                        {new Date(n.created_at).toLocaleString()}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-400 font-semibold">{n.author_name || 'Staff'}</td>
+                      <td className="px-4 py-3 text-right">
+                        <button
+                          onClick={() => deleteNewsHandler(n.id)}
+                          className="p-1 text-red-650 hover:bg-red-50 dark:hover:bg-red-950/30 rounded"
+                          title="Delete article"
+                        >
+                          <HiTrash className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="p-8 text-center text-gray-500">No awareness articles published yet.</div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Testimonials tab ── */}
+      {tab === 'testimonials' && (
+        <div className="space-y-5">
+          <div className="flex justify-between items-center">
+            <h2 className="font-semibold text-gray-800 dark:text-gray-200">Survivor Testimonials Moderation</h2>
+          </div>
+
+          <div className="card !p-0 overflow-hidden dark:bg-gray-950 dark:border-gray-900">
+            {loadingTestimonials ? (
+              <div className="p-8 text-center text-gray-500">Loading testimonials...</div>
+            ) : testimonials.length > 0 ? (
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-900">
+                  <tr>
+                    {['Content', 'Author', 'Status', 'Submitted At', ''].map((h) => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50 dark:divide-gray-900">
+                  {testimonials.map((t) => (
+                    <tr key={t.id}>
+                      <td className="px-4 py-3 max-w-sm">
+                        <p className="text-xs text-gray-650 dark:text-gray-300 italic">"{t.content}"</p>
+                      </td>
+                      <td className="px-4 py-3 text-xs font-bold text-gray-800 dark:text-gray-200">{t.author_name}</td>
+                      <td className="px-4 py-3">
+                        <span className={`badge ${t.is_approved ? 'bg-green-50 text-green-700 dark:bg-emerald-950/30' : 'bg-amber-50 text-amber-700 dark:bg-amber-950/30'}`}>
+                          {t.is_approved ? 'Approved' : 'Pending Review'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-450">
+                        {new Date(t.created_at).toLocaleString()}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex gap-2 justify-end">
+                          {!t.is_approved && (
+                            <button
+                              onClick={() => approveTestimonialHandler(t.id)}
+                              className="p-1 text-emerald-650 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded"
+                              title="Approve testimonial"
+                            >
+                              <HiCheck className="w-4 h-4" />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => deleteTestimonialHandler(t.id)}
+                            className="p-1 text-red-650 hover:bg-red-50 dark:hover:bg-red-950/30 rounded"
+                            title="Delete testimonial"
+                          >
+                            <HiTrash className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="p-8 text-center text-gray-500">No survivor testimonials submitted yet.</div>
+            )}
           </div>
         </div>
       )}
