@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const Case = require('../models/Case');
+const AuditLog = require('../models/AuditLog');
 const { auditLog } = require('../middleware/auditLog');
 
 const listUsers = async (req, res, next) => {
@@ -80,4 +81,14 @@ const listOfficers = async (req, res, next) => {
   }
 };
 
-module.exports = { listUsers, createUser, toggleUserActive, getStats, listOfficers };
+const getAuditLogs = async (req, res, next) => {
+  try {
+    const { page = 1, limit = 20 } = req.query;
+    const result = await AuditLog.list({ page: parseInt(page), limit: parseInt(limit) });
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { listUsers, createUser, toggleUserActive, getStats, listOfficers, getAuditLogs };

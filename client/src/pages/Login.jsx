@@ -44,8 +44,8 @@ export default function Login() {
           <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/30">
             <HiShieldCheck className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Staff Login</h1>
-          <p className="text-sm text-gray-500 mt-1">SafeReport Case Management</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Staff Login</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">SafeReport Case Management</p>
         </div>
 
         {/* Form */}
@@ -93,9 +93,9 @@ export default function Login() {
           </button>
         </form>
 
-        <p className="text-center text-xs text-gray-400">
+        <p className="text-center text-xs text-gray-400 dark:text-gray-500">
           Anonymous reporters do not need to log in.{' '}
-          <a href="/report" className="text-primary hover:underline">Submit a report here.</a>
+          <a href="/report" className="text-primary dark:text-indigo-400 hover:underline">Submit a report here.</a>
         </p>
       </div>
     </div>
