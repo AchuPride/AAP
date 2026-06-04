@@ -7,6 +7,8 @@ const reportSchema = Joi.object({
   description: Joi.string().min(20).max(5000).required(),
   location: Joi.string().max(500).optional().allow('', null),
   incident_date: Joi.date().max('now').required(),
+  platform_involved: Joi.string().max(100).optional().allow('', null),
+  anonymous_toggle: Joi.boolean().optional(),
 });
 
 const loginSchema = Joi.object({

@@ -33,7 +33,7 @@ export default function Home() {
       .catch(err => {
         console.error(err);
         // Set mock/fallback values for demonstration
-        setStats({ total: 42, resolved: 31, under_review: 6, investigating: 5 });
+        setStats({ total: 0, resolved: 0, under_review: 0, investigating: 0 });
         setLoadingStats(false);
       });
 
@@ -148,7 +148,7 @@ export default function Home() {
               <HiUserGroup className="w-5 h-5" />
             </div>
             <span className="text-2xl md:text-3xl font-black text-gray-800 dark:text-white font-mono">
-              {loadingPartners ? '...' : partners.length || 4}
+              {loadingPartners ? '...' : partners.length}
             </span>
             <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">{t('statPartners')}</span>
           </div>
@@ -157,7 +157,7 @@ export default function Home() {
             <div className="w-10 h-10 rounded-xl bg-indigo-150 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-1">
               <HiLibrary className="w-5 h-5" />
             </div>
-            <span className="text-2xl md:text-3xl font-black text-gray-800 dark:text-white font-mono">15+</span>
+            <span className="text-2xl md:text-3xl font-black text-gray-800 dark:text-white font-mono">0</span>
             <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">{t('statResources')}</span>
           </div>
         </div>

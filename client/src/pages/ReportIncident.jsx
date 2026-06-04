@@ -18,15 +18,7 @@ const VIOLENCE_TYPES = [
   { value: 'other',             label: 'Other' },
 ];
 
-const INCIDENT_CATEGORIES = [
-  { value: 'cyberstalking', label: 'Cyberstalking' },
-  { value: 'non_consensual_sharing', label: 'Non-Consensual Sharing of Intimate Images' },
-  { value: 'hate_speech', label: 'Hate Speech & Gender-based Slurs' },
-  { value: 'impersonation', label: 'Online Impersonation / Identity Theft' },
-  { value: 'doxing', label: 'Doxing (Publishing Private Info)' },
-  { value: 'harassment', label: 'Online Harassment / Cyberbullying' },
-  { value: 'other', label: 'Other' },
-];
+
 
 const PLATFORMS = [
   { value: 'facebook', label: 'Facebook' },
@@ -50,7 +42,6 @@ export default function ReportIncident() {
 
   const [form, setForm] = useState({
     violence_type: '',
-    incident_category: '',
     platform_involved: '',
     description:   '',
     location:      '',
@@ -58,6 +49,59 @@ export default function ReportIncident() {
     anonymous_toggle: true,
   });
   const [files, setFiles] = useState([]);
+  const [detectingLoc, setDetectingLoc] = useState(false);
+
+  const autoDetectLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser.');
+      return;
+    }
+    
+    setDetectingLoc(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=14&addressdetails=1`, {
+            headers: {
+              'Accept-Language': language === 'en' ? 'en' : 'fr'
+            }
+          });
+          if (!res.ok) throw new Error('Geocoding failed');
+          const data = await res.json();
+          
+          const addr = data.address || {};
+          const cityPart = addr.city || addr.town || addr.village || addr.county || '';
+          const neighborhoodPart = addr.suburb || addr.neighbourhood || addr.quarter || '';
+          
+          let formattedLoc = '';
+          if (neighborhoodPart && cityPart) {
+            formattedLoc = `${neighborhoodPart}, ${cityPart}`;
+          } else if (cityPart) {
+            formattedLoc = cityPart;
+          } else if (data.display_name) {
+            formattedLoc = data.display_name.split(',').slice(0, 2).map(s => s.trim()).join(', ');
+          } else {
+            formattedLoc = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+          }
+
+          setForm(prev => ({ ...prev, location: formattedLoc }));
+          toast.success(language === 'en' ? 'Location detected successfully!' : 'Localisation détectée avec succès !');
+        } catch (error) {
+          console.error(error);
+          setForm(prev => ({ ...prev, location: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}` }));
+          toast.success(language === 'en' ? 'Coordinates detected.' : 'Coordonnées détectées.');
+        } finally {
+          setDetectingLoc(false);
+        }
+      },
+      (error) => {
+        setDetectingLoc(false);
+        toast.error(language === 'en' ? 'Could not retrieve location. Please check your permissions.' : 'Impossible d\'obtenir la localisation. Veuillez vérifier vos permissions.');
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
 
   const change = (e) => {
     const val = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
@@ -205,30 +249,6 @@ export default function ReportIncident() {
               {errors.violence_type && <p className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.violence_type}</p>}
             </div>
 
-            {/* OGBV Incident Category */}
-            <div>
-              <label className="label">{t('labelCategory')}</label>
-              <select name="incident_category" value={form.incident_category} onChange={change} className="input dark:bg-gray-900 dark:border-gray-800 dark:text-gray-100">
-                <option value="">{language === 'en' ? 'Select category...' : 'Sélectionner la catégorie...'}</option>
-                {INCIDENT_CATEGORIES.map((cat) => (
-                  <option key={cat.value} value={cat.value}>{cat.label}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Platform involved */}
-            <div>
-              <label className="label">{t('labelPlatform')}</label>
-              <select name="platform_involved" value={form.platform_involved} onChange={change} className="input dark:bg-gray-900 dark:border-gray-800 dark:text-gray-100">
-                <option value="">{language === 'en' ? 'Select platform...' : 'Sélectionner la plateforme...'}</option>
-                {PLATFORMS.map((plat) => (
-                  <option key={plat.value} value={plat.value}>{plat.label}</option>
-                ))}
-              </select>
-            </div>
-
             {/* Date */}
             <div>
               <label className="label">{t('labelIncidentDate')} <span className="text-red-400">*</span></label>
@@ -241,6 +261,19 @@ export default function ReportIncident() {
                 className="input dark:bg-gray-900 dark:border-gray-800 dark:text-gray-100"
               />
               {errors.incident_date && <p className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.incident_date}</p>}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
+            {/* Platform involved */}
+            <div>
+              <label className="label">{t('labelPlatform')}</label>
+              <select name="platform_involved" value={form.platform_involved} onChange={change} className="input dark:bg-gray-900 dark:border-gray-800 dark:text-gray-100">
+                <option value="">{language === 'en' ? 'Select platform...' : 'Sélectionner la plateforme...'}</option>
+                {PLATFORMS.map((plat) => (
+                  <option key={plat.value} value={plat.value}>{plat.label}</option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -265,7 +298,27 @@ export default function ReportIncident() {
 
           {/* Location */}
           <div>
-            <label className="label">{t('labelLocation')}</label>
+            <div className="flex justify-between items-center mb-1">
+              <label className="label mb-0">{t('labelLocation')}</label>
+              <button
+                type="button"
+                onClick={autoDetectLocation}
+                disabled={detectingLoc}
+                className="text-xs font-semibold text-primary dark:text-indigo-400 hover:underline flex items-center gap-1 focus:outline-none disabled:opacity-50"
+              >
+                {detectingLoc ? (
+                  <>
+                    <span className="w-3 h-3 border border-primary dark:border-indigo-400 border-t-transparent rounded-full animate-spin" />
+                    {language === 'en' ? 'Detecting...' : 'Détection...'}
+                  </>
+                ) : (
+                  <>
+                    <span>📍</span>
+                    {language === 'en' ? 'Auto-detect location' : 'Détecter automatiquement'}
+                  </>
+                )}
+              </button>
+            </div>
             <input
               type="text"
               name="location"

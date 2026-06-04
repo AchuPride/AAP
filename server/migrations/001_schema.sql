@@ -29,24 +29,32 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 -- ─── CASES ──────────────────────────────────────────────────────
-CREATE TYPE case_status AS ENUM (
-  'submitted',
-  'under_review',
-  'assigned',
-  'investigating',
-  'resolved',
-  'closed'
-);
+DO $$ BEGIN
+  CREATE TYPE case_status AS ENUM (
+    'submitted',
+    'under_review',
+    'assigned',
+    'investigating',
+    'resolved',
+    'closed'
+  );
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TYPE violence_type AS ENUM (
-  'physical',
-  'sexual',
-  'psychological',
-  'economic',
-  'stalking',
-  'online_harassment',
-  'other'
-);
+DO $$ BEGIN
+  CREATE TYPE violence_type AS ENUM (
+    'physical',
+    'sexual',
+    'psychological',
+    'economic',
+    'stalking',
+    'online_harassment',
+    'other'
+  );
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
 CREATE TABLE IF NOT EXISTS cases (
   id                  SERIAL PRIMARY KEY,
@@ -73,12 +81,16 @@ CREATE TABLE IF NOT EXISTS case_evidence (
 );
 
 -- ─── CASE UPDATES / TIMELINE ────────────────────────────────────
-CREATE TYPE update_type AS ENUM (
-  'status_change',
-  'assignment',
-  'note',
-  'evidence_added'
-);
+DO $$ BEGIN
+  CREATE TYPE update_type AS ENUM (
+    'status_change',
+    'assignment',
+    'note',
+    'evidence_added'
+  );
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
 CREATE TABLE IF NOT EXISTS case_updates (
   id              SERIAL PRIMARY KEY,
@@ -122,10 +134,12 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
+DROP TRIGGER IF EXISTS update_cases_updated_at ON cases;
 CREATE TRIGGER update_cases_updated_at
   BEFORE UPDATE ON cases
   FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_users_updated_at ON users;
 CREATE TRIGGER update_users_updated_at
   BEFORE UPDATE ON users
   FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();

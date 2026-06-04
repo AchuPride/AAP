@@ -94,10 +94,65 @@ if (process.env.NODE_ENV === 'production') {
 }
 app.use(errorHandler);
 
+// ── Database Migrations and Seeding on Startup ────────────────
+const { pool } = require('./config/database');
+const bcrypt = require('bcryptjs');
+
+async function runMigrationsAndSeedOnStartup() {
+  const client = await pool.connect();
+  try {
+    logger.info('Running database migrations on startup...');
+    const sql1 = fs.readFileSync(path.join(__dirname, 'migrations', '001_schema.sql'), 'utf8');
+    const sql2 = fs.readFileSync(path.join(__dirname, 'migrations', '002_add_new_features.sql'), 'utf8');
+    
+    await client.query('BEGIN');
+    await client.query(sql1);
+    await client.query(sql2);
+    await client.query('COMMIT');
+    logger.info('✅ Database migrations executed successfully');
+
+    // Check if users table is empty and seed if necessary
+    const userCountRes = await client.query('SELECT COUNT(*) FROM users');
+    const userCount = parseInt(userCountRes.rows[0].count);
+    if (userCount === 0) {
+      logger.info('Database has no users. Seeding default admin and officer accounts...');
+      
+      const adminHash = await bcrypt.hash('Admin@2024!', 12);
+      const officerHash = await bcrypt.hash('Officer@2024!', 12);
+
+      await client.query(
+        `INSERT INTO users (username, password_hash, full_name, role_id)
+         VALUES ($1,$2,$3,(SELECT id FROM roles WHERE name='admin'))`,
+        ['admin', adminHash, 'System Administrator']
+      );
+
+      await client.query(
+        `INSERT INTO users (username, password_hash, full_name, role_id)
+         VALUES ($1,$2,$3,(SELECT id FROM roles WHERE name='officer'))`,
+        ['officer1', officerHash, 'Case Officer One']
+      );
+      logger.info('✅ Default seed completed successfully');
+    }
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    logger.error('❌ Database migration/seed failed on startup:', err.message);
+  } finally {
+    client.release();
+  }
+}
+
 // ── Start ──────────────────────────────────────────────────────
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
-    logger.info(`GBV Platform server running on port ${PORT} [${process.env.NODE_ENV}]`);
+  runMigrationsAndSeedOnStartup().then(() => {
+    app.listen(PORT, () => {
+      logger.info(`GBV Platform server running on port ${PORT} [${process.env.NODE_ENV}]`);
+    });
+  }).catch((err) => {
+    logger.error('❌ Failed to run startup sequence:', err.message);
+    // fallback start
+    app.listen(PORT, () => {
+      logger.info(`GBV Platform server running on port ${PORT} [${process.env.NODE_ENV}] (without startup sequence)`);
+    });
   });
 }
 

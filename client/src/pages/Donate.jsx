@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 
 export default function Donate() {
   const { language, t } = useLanguage();
-  const [amount, setAmount] = useState('25');
+  const [amount, setAmount] = useState('2500');
   const [customAmount, setCustomAmount] = useState('');
   const [payMethod, setPayMethod] = useState('momo'); // momo | card | paypal
   const [loading, setLoading] = useState(false);
@@ -42,9 +42,9 @@ export default function Donate() {
 
   const getTierBenefit = () => {
     const finalVal = amount === 'custom' ? parseFloat(customAmount) || 0 : parseFloat(amount);
-    if (finalVal >= 100) return language === 'en' ? 'Provides safe shelter and counseling for a survivor for 1 month.' : 'Offre un abri sûr et des conseils à une survivante pendant 1 mois.';
-    if (finalVal >= 50) return language === 'en' ? 'Funds a full legal aid consultation and document archiving.' : 'Finance une consultation d\'aide juridique complète et l\'archivage de documents.';
-    if (finalVal >= 25) return language === 'en' ? 'Covers 1 week of digital safety and internet training for a youth group.' : 'Couvre 1 semaine de formation sur la sécurité numérique pour un groupe de jeunes.';
+    if (finalVal >= 60000) return language === 'en' ? 'Provides safe shelter and counseling for a survivor for 1 month.' : 'Offre un abri sûr et des conseils à une survivante pendant 1 mois.';
+    if (finalVal >= 30000) return language === 'en' ? 'Funds a full legal aid consultation and document archiving.' : 'Finance une consultation d\'aide juridique complète et l\'archivage de documents.';
+    if (finalVal >= 15000) return language === 'en' ? 'Covers 1 week of digital safety and internet training for a youth group.' : 'Couvre 1 semaine de formation sur la sécurité numérique pour un groupe de jeunes.';
     return language === 'en' ? 'Supports platform hosting, encryption security, and database audits.' : 'Soutient l\'hébergement de la plateforme, la sécurité du chiffrement et les audits de base de données.';
   };
 
@@ -105,11 +105,11 @@ export default function Donate() {
             {language === 'en' ? 'Platform Sustainability Goal' : 'Objectif de Pérennité de la Plateforme'}
           </h4>
           <div className="w-full bg-gray-200 dark:bg-gray-800 h-2.5 rounded-full overflow-hidden mb-2">
-            <div className="bg-primary h-full rounded-full" style={{ width: '68%' }} />
+            <div className="bg-primary h-full rounded-full" style={{ width: '0%' }} />
           </div>
           <div className="flex justify-between text-xs text-gray-550 dark:text-gray-400 font-semibold">
-            <span>68% {language === 'en' ? 'funded' : 'financé'}</span>
-            <span>$3,400 / $5,000 {language === 'en' ? 'monthly' : 'mensuel'}</span>
+            <span>0% {language === 'en' ? 'funded' : 'financé'}</span>
+            <span>0frs / 5,000,000frs {language === 'en' ? 'monthly' : 'mensuel'}</span>
           </div>
         </div>
       </div>
@@ -131,9 +131,9 @@ export default function Donate() {
         <form onSubmit={handleDonate} className="space-y-6">
           {/* Tiers Select Grid */}
           <div className="space-y-2">
-            <label className="label">{language === 'en' ? 'Select Donation Amount (USD)' : 'Sélectionner le montant (USD)'}</label>
+            <label className="label">{language === 'en' ? 'Select Donation Amount (frs)' : 'Sélectionner le montant (frs)'}</label>
             <div className="grid grid-cols-4 gap-2">
-              {['10', '25', '50', '100'].map((tier) => (
+              {['1000', '2500', '5000', '10000'].map((tier) => (
                 <button
                   key={tier}
                   type="button"
@@ -147,7 +147,7 @@ export default function Donate() {
                       : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300'
                   }`}
                 >
-                  ${tier}
+                  {tier} frs
                 </button>
               ))}
             </div>
@@ -167,14 +167,14 @@ export default function Donate() {
               </button>
               {amount === 'custom' && (
                 <div className="relative">
-                  <span className="absolute left-3.5 top-2.5 text-xs text-gray-450 font-bold">$</span>
                   <input
                     type="number"
-                    placeholder="Enter amount..."
+                    placeholder={language === 'en' ? "Enter amount in frs..." : "Entrez le montant en frs..."}
                     value={customAmount}
                     onChange={(e) => setCustomAmount(e.target.value)}
-                    className="input pl-7 text-xs py-2 w-full dark:bg-gray-900 dark:border-gray-800 dark:text-gray-100"
+                    className="input pr-10 text-xs py-2 w-full dark:bg-gray-900 dark:border-gray-800 dark:text-gray-100"
                   />
+                  <span className="absolute right-3.5 top-2 text-xs text-gray-450 font-bold">frs</span>
                 </div>
               )}
             </div>
@@ -312,7 +312,7 @@ export default function Donate() {
               <>
                 <HiHeart className="w-5 h-5 shrink-0 text-white" />
                 <span>
-                  {language === 'en' ? 'Donate Now' : 'Faire le don'} (${amount === 'custom' ? customAmount || '0' : amount})
+                  {language === 'en' ? 'Donate Now' : 'Faire le don'} ({amount === 'custom' ? customAmount || '0' : amount} frs)
                 </span>
               </>
             )}
