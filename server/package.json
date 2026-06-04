@@ -8,6 +8,7 @@
     "dev": "nodemon server.js",
     "migrate": "node migrations/migrate.js",
     "seed": "node migrations/seed.js",
+    "reset-db": "node migrations/reset.js",
     "test": "jest --forceExit"
   },
   "dependencies": {

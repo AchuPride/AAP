@@ -13,6 +13,7 @@
     "start":         "cd server && node server.js",
     "migrate":       "cd server && npm run migrate",
     "seed":          "cd server && npm run seed",
+    "reset-db":      "cd server && npm run reset-db",
     "test":          "cd server && npm test"
   },
   "devDependencies": {

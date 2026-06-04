@@ -106,6 +106,27 @@ async function runMigrationsAndSeedOnStartup() {
     const sql2 = fs.readFileSync(path.join(__dirname, 'migrations', '002_add_new_features.sql'), 'utf8');
     
     await client.query('BEGIN');
+
+    if (process.env.RESET_DB === 'true') {
+      logger.warn('RESET_DB environment variable is set to true. Wiping database tables and custom types...');
+      await client.query(`
+        DROP TABLE IF EXISTS audit_logs CASCADE;
+        DROP TABLE IF EXISTS case_updates CASCADE;
+        DROP TABLE IF EXISTS case_evidence CASCADE;
+        DROP TABLE IF EXISTS cases CASCADE;
+        DROP TABLE IF EXISTS testimonials CASCADE;
+        DROP TABLE IF EXISTS news CASCADE;
+        DROP TABLE IF EXISTS partners CASCADE;
+        DROP TABLE IF EXISTS users CASCADE;
+        DROP TABLE IF EXISTS roles CASCADE;
+
+        DROP TYPE IF EXISTS case_status CASCADE;
+        DROP TYPE IF EXISTS violence_type CASCADE;
+        DROP TYPE IF EXISTS update_type CASCADE;
+      `);
+      logger.info('Database wiped successfully.');
+    }
+
     await client.query(sql1);
     await client.query(sql2);
     await client.query('COMMIT');
