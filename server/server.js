@@ -64,7 +64,50 @@ app.use(defaultLimiter);
 app.set('trust proxy', 1);
 
 // ── Health check ───────────────────────────────────────────────
-app.get('/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date() }));
+let startupError = null;
+
+app.get('/health', async (_req, res) => {
+  const { pool } = require('./config/database');
+  let dbStatus = 'disconnected';
+  let tables = [];
+  let userCount = 0;
+  let error = null;
+
+  try {
+    const client = await pool.connect();
+    dbStatus = 'connected';
+    try {
+      const tablesRes = await client.query(`
+        SELECT table_name 
+        FROM information_schema.tables 
+        WHERE table_schema = 'public'
+      `);
+      tables = tablesRes.rows.map(r => r.table_name);
+      
+      if (tables.includes('users')) {
+        const usersCountRes = await client.query('SELECT COUNT(*) FROM users');
+        userCount = parseInt(usersCountRes.rows[0].count);
+      }
+    } catch (e) {
+      error = e.message;
+    } finally {
+      client.release();
+    }
+  } catch (e) {
+    error = e.message;
+  }
+
+  res.json({
+    status: dbStatus === 'connected' && !startupError && !error ? 'ok' : 'error',
+    timestamp: new Date(),
+    database: dbStatus,
+    tables,
+    userCount,
+    startupError: startupError || null,
+    queryError: error || null,
+    envResetDb: process.env.RESET_DB || 'not_set'
+  });
+});
 
 // ── API routes ─────────────────────────────────────────────────
 app.use('/api/report', reportRoutes);
@@ -156,6 +199,7 @@ async function runMigrationsAndSeedOnStartup() {
     }
   } catch (err) {
     await client.query('ROLLBACK').catch(() => {});
+    startupError = err.message;
     logger.error('❌ Database migration/seed failed on startup:', err.message);
   } finally {
     client.release();
