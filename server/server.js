@@ -66,7 +66,7 @@ app.set('trust proxy', 1);
 // ── Health check ───────────────────────────────────────────────
 let startupError = null;
 
-app.get('/health', async (_req, res) => {
+app.get('/api/health', async (_req, res) => {
   const { pool } = require('./config/database');
   let dbStatus = 'disconnected';
   let tables = [];
